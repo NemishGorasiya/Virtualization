@@ -2,7 +2,7 @@ import VirtualizedGrid from "./components/VirtualizedGrid";
 import "./App.css";
 import { useEffect, useRef, useState } from "react";
 
-const LIMIT = 5;
+const LIMIT = 250;
 
 const App = () => {
   const [items, setItems] = useState({
@@ -28,7 +28,7 @@ const App = () => {
       setItems((prev) => ({
         ...prev,
         isLoading: false,
-        hasMore: prev.itemsList.length < 60,
+        hasMore: prev.itemsList.length < 250,
         itemsList: [...prev.itemsList, ...newArr],
       }));
       countRef.current += LIMIT;
@@ -37,15 +37,19 @@ const App = () => {
 
   const renderItem = (item) => {
     return (
-      <div style={{ padding: "20px", border: "1px solid #ccc" }}>{item}</div>
+      <div>
+        <div
+          className="image-wrapper"
+          style={{ width: "100%", aspectRatio: "1/1", display: "flex" }}
+        >
+          <img
+            src={`https://picsum.photos/id/${item}/200/300`}
+            style={{ height: "100%", width: "100%", objectFit: "cover" }}
+            alt="Element-Image"
+          />
+        </div>
+      </div>
     );
-  };
-
-  const gridStyles = {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
-    gap: "10px",
-    padding: "10px",
   };
 
   useEffect(() => {
@@ -62,14 +66,17 @@ const App = () => {
   }, []);
 
   return (
-    <div style={{ height: "100vh", width: "100%" }}>
+    <div style={{ height: "100vh", width: "100%", padding: "50px" }}>
       <VirtualizedGrid
         items={itemsList}
         renderItem={renderItem}
-        gridStyles={gridStyles}
         loadMore={loadMore}
         hasMore={hasMore}
         isLoading={isLoading}
+        rowGap={20}
+        columnGap={200}
+        minColumnWidth={250}
+        overscan={0}
       />
     </div>
   );

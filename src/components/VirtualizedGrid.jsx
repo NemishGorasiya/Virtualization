@@ -4,21 +4,25 @@ import { useState, useRef, useEffect, useCallback } from "react";
 const VirtualizedGrid = ({
   items,
   renderItem,
-  gridStyles,
   loadMore,
   hasMore,
   isLoading,
+  rowGap = 0,
+  columnGap = 0,
+  minColumnWidth = 250,
+  overscan = 0,
 }) => {
   const [visibleItems, setVisibleItems] = useState({
     list: [],
     offsetTop: 0,
     offsetBottom: 0,
-    lastRowIndex: 0,
   });
   const [itemDimensions, setItemDimensions] = useState({ width: 0, height: 0 });
+
   const gridRef = useRef(null);
   const measureRef = useRef(null);
   const lastElementRef = useRef(null);
+  const gridWrapperRef = useRef(null);
   const timeoutRef = useRef(null);
 
   const measureItemDimensions = () => {
@@ -36,44 +40,58 @@ const VirtualizedGrid = ({
       return;
     }
 
-    const columns = Math.ceil(clientWidth / itemDimensions.width);
-    const rows = Math.ceil(clientHeight / itemDimensions.height) + 1;
+    const firstElement =
+      gridWrapperRef?.current?.lastChild?.getBoundingClientRect();
+
+    const itemElementHeight = firstElement?.height || itemDimensions.height;
+    const itemElementWidth = firstElement?.width || itemDimensions.width;
+
+    console.log("itemElementWidth", itemElementWidth);
+
+    const columns = Math.floor(
+      (clientWidth + rowGap) / parseInt(itemElementWidth + rowGap) // logic is remain (incomplete)
+    );
+    const rows =
+      Math.ceil(clientHeight / (itemElementHeight + rowGap)) + 2 + 2 * overscan;
+
+    console.log("/////////////////////////", columns);
 
     const lastPossibleRowIndex = Math.ceil(items.length / columns) - 1;
 
     const startRowIdx =
-      Math.floor(scrollTop / itemDimensions.height) - 1 < 0
+      Math.floor(scrollTop / (itemElementHeight + rowGap)) - overscan - 1 < 0
         ? 0
-        : Math.floor(scrollTop / itemDimensions.height) - 1;
+        : Math.floor(scrollTop / (itemElementHeight + rowGap)) - overscan - 1;
 
     const endRowIdx =
-      Math.ceil(items.length / columns) <= startRowIdx + rows
-        ? Math.ceil(items.length / columns)
-        : startRowIdx + rows;
+      lastPossibleRowIndex <= startRowIdx + rows - 1
+        ? lastPossibleRowIndex
+        : startRowIdx + rows - 1;
+
+    console.log("scroll", scrollTop);
+    console.log("all idx", startRowIdx, endRowIdx);
 
     const firstItemIdx = startRowIdx * columns;
     const lastItemIdx = (endRowIdx + 1) * columns - 1;
 
-    const visibleItems = items.slice(firstItemIdx, lastItemIdx + 1); // + 1 because slice exclude last index
+    const visibleItems = items
+      .slice(firstItemIdx, lastItemIdx + 1)
+      .map((ele, index) => ({ item: ele, idx: firstItemIdx + index })); // + 1 because slice exclude last index
 
-    setVisibleItems((prevVisibleItems) => {
+    setVisibleItems(() => {
       const offsetTop =
-        startRowIdx * itemDimensions.height + parseInt(gridStyles.padding);
-      const lastRowIndex =
-        prevVisibleItems.lastRowIndex < endRowIdx
-          ? endRowIdx
-          : prevVisibleItems.lastRowIndex;
+        startRowIdx * ((itemElementHeight || itemDimensions.height) + rowGap);
+      console.log("===================", offsetTop);
       const offsetBottom =
-        (lastPossibleRowIndex - endRowIdx) * itemDimensions.height +
-        parseInt(gridStyles.padding);
+        (lastPossibleRowIndex - endRowIdx) *
+        ((itemElementHeight || itemDimensions.height) + rowGap);
       return {
         list: visibleItems,
         offsetTop,
         offsetBottom,
-        lastRowIndex,
       };
     });
-  }, [gridStyles.padding, itemDimensions.height, itemDimensions.width, items]);
+  }, [itemDimensions.height, itemDimensions.width, items, overscan, rowGap]);
 
   const handleScroll = () => {
     if (timeoutRef.current) {
@@ -120,57 +138,86 @@ const VirtualizedGrid = ({
     calculateVisibleItems();
   }, [calculateVisibleItems, itemDimensions]);
 
+  console.log("item dim", visibleItems);
+
   return (
     <>
-      {items.length > 0 && (
-        <div
-          style={{
-            position: "absolute",
-            height: "auto",
-            width: "100%",
-            visibility: "hidden",
-            ...gridStyles,
-          }}
-        >
-          <div ref={measureRef} className="dummyDiv">
-            {renderItem(items[0].id)}
-          </div>
-        </div>
-      )}
-
+      <div
+        style={{
+          position: "fixed",
+          top: "50%",
+          left: "50%",
+          zIndex: 99,
+          background: "#fff",
+          fontSize: "40px",
+          transform: "translate(-50%,-50%)",
+        }}
+      >
+        <h1>{visibleItems.list.length}</h1>
+      </div>
       <div
         ref={gridRef}
         style={{
           overflowY: "auto",
           height: "100%",
           width: "100%",
+          position: "relative",
         }}
         onScroll={handleScroll}
       >
+        {items.length > 0 && (
+          <div
+            style={{
+              position: "absolute",
+              height: "100%",
+              width: "100%",
+              visibility: "hidden",
+              display: "grid",
+              gridTemplateColumns: `repeat(auto-fill, minmax(${minColumnWidth}px, 1fr))`,
+              rowGap,
+              columnGap,
+            }}
+          >
+            <div ref={measureRef} className="dummyDiv">
+              {/* {renderItem(items[0].idx)} */}
+              {renderItem(1)}
+            </div>
+          </div>
+        )}
         <div
           style={{
-            ...gridStyles,
-            gridAutoRows: `${itemDimensions.height}px`,
-            paddingTop: visibleItems.offsetTop,
-            paddingBottom: visibleItems.offsetBottom,
-            width: "100%",
+            position: "absolute",
             height: "100%",
+            width: "100%",
+            top: 0,
           }}
         >
-          {visibleItems.list.length > 0 &&
-            visibleItems.list.map((item) => (
-              <div
-                ref={item.id === items.at(-1).id ? lastElementRef : null}
-                key={item.id}
-              >
-                {renderItem(item.id)}
-              </div>
-            ))}
-          {isLoading &&
-            hasMore &&
-            Array.from({ length: 5 }, (_, idx) => idx).map((_, index) => (
-              <div key={index} style={{ background: "#F1F1F1" }} />
-            ))}
+          <div
+            ref={gridWrapperRef}
+            style={{
+              paddingTop: visibleItems.offsetTop,
+              paddingBottom: visibleItems.offsetBottom,
+              width: "100%",
+              height: "100%",
+              display: "grid",
+              gridTemplateColumns: `repeat(auto-fill, minmax(${minColumnWidth}px, 1fr))`,
+              rowGap,
+              columnGap,
+            }}
+          >
+            {visibleItems.list.length > 0 &&
+              visibleItems.list.map((visibleItem) => (
+                <div
+                  ref={
+                    visibleItem.idx === items.length - 1 ? lastElementRef : null
+                  }
+                  key={visibleItem.idx}
+                >
+                  {/* {renderItem(visibleItem.item)} */}
+                  {renderItem(visibleItem.idx)}
+                </div>
+              ))}
+          </div>
         </div>
       </div>
     </>
@@ -180,8 +227,13 @@ const VirtualizedGrid = ({
 VirtualizedGrid.propTypes = {
   items: PropTypes.array,
   renderItem: PropTypes.func,
-  gridStyles: PropTypes.object,
   loadMore: PropTypes.func,
+  hasMore: PropTypes.bool,
+  isLoading: PropTypes.bool,
+  rowGap: PropTypes.number,
+  columnGap: PropTypes.number,
+  minColumnWidth: PropTypes.number,
+  overscan: PropTypes.number,
 };
 
 export default VirtualizedGrid;
