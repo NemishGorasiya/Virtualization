@@ -1,8 +1,10 @@
-# React + Vite
+# Grid DOM Virtualization
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A performant, virtualized grid component built using React, designed to handle large lists of items by rendering only the visible ones, thus improving performance.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Virtualization**: Renders only the visible items in the grid to improve performance.
+- **Infinite Scrolling**: Loads more items as you scroll down.
+- **Customizable Layout**: Supports custom row and column gaps, and minimum column width.
+- **Responsive Design**: Automatically adjusts the number of columns based on the container width.
