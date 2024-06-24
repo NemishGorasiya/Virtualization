@@ -1,0 +1,18 @@
+.placeholder {
+  width: 100%;
+  aspect-ratio: 1/1;
+  background: #f9e6d6;
+  border: 1px solid #a78f7b;
+}
+
+.grid-item .grid-image-wrapper {
+  width: 100%;
+  aspect-ratio: 1/1;
+  display: flex;
+  border: 1px solid #a78f7b;
+}
+.grid-item .grid-image-wrapper img {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+}

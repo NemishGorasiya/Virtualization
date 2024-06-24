@@ -1,8 +1,9 @@
 import VirtualizedGrid from "./components/VirtualizedGrid";
 import "./App.css";
 import { useEffect, useRef, useState } from "react";
+import GridItem from "./components/GridItem";
 
-const LIMIT = 250;
+const LIMIT = 25;
 
 const App = () => {
   const [items, setItems] = useState({
@@ -35,23 +36,6 @@ const App = () => {
     }, [2000]);
   };
 
-  const renderItem = (item) => {
-    return (
-      <div>
-        <div
-          className="image-wrapper"
-          style={{ width: "100%", aspectRatio: "1/1", display: "flex" }}
-        >
-          <img
-            src={`https://picsum.photos/id/${item}/200/300`}
-            style={{ height: "100%", width: "100%", objectFit: "cover" }}
-            alt="Element-Image"
-          />
-        </div>
-      </div>
-    );
-  };
-
   useEffect(() => {
     setTimeout(() => {
       setItems((prev) => ({
@@ -66,17 +50,17 @@ const App = () => {
   }, []);
 
   return (
-    <div style={{ height: "100vh", width: "100%", padding: "50px" }}>
+    <div className="grid-wrapper">
       <VirtualizedGrid
         items={itemsList}
-        renderItem={renderItem}
+        renderItem={GridItem}
         loadMore={loadMore}
         hasMore={hasMore}
         isLoading={isLoading}
         rowGap={20}
-        columnGap={200}
+        columnGap={20}
         minColumnWidth={250}
-        overscan={0}
+        overscan={1}
       />
     </div>
   );
